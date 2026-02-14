@@ -201,3 +201,21 @@ label.gfield_label {
 input[type="submit"] {
     font-weight: 500;
 }
+
+/** Property Gallery **/
+.property-gallery {
+    position: relative;
+}
+.property-gallery a[data-fancybox="property_images"] {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+}
+.property-gallery a[data-fancybox="property_images"] button {
+    background: var(--global-palette-highlight);
+    color: var(--global-palette9);
+    border: 0;
+    border-radius: 4px;
+    font-size: 30px;
+    font-weight: 600;
+}

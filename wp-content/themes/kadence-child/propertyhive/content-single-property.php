@@ -67,7 +67,7 @@ global $post, $property;
                         if ($query_dev_lookup->have_posts()) {
                             while ($query_dev_lookup->have_posts()) {
                                 $query_dev_lookup->the_post();
-                                echo '<h5><a href="' . get_the_permalink() . '">â€¹ Back to Developments: ' . get_the_title() . '</a></h5>';
+                                echo '<h5><a href="' . get_the_permalink() . '">&lsaquo; Back to Developments: ' . get_the_title() . '</a></h5>';
                             }
                         }
                         wp_reset_postdata();
@@ -101,18 +101,7 @@ global $post, $property;
                             ?>
                         </p>
                     <?php endif; ?>
-					<?php
-                        // $price_qualifier = $property->PriceQualifierType;
-						// if ( $price_qualifier != '' ) {
-						// 	echo ' <span class="price-qualifier">' . $price_qualifier . '</span>';
-						// }
-
-						// if ( $fees != '' ) {
-						// 	echo ' <span class="lettings-fees"><a data-fancybox data-src="#propertyhive_lettings_fees_popup" href="javascript:;">' . __( 'Tenancy Info', 'propertyhive' ) . '</a></span>';
-						// 	echo '<div id="propertyhive_lettings_fees_popup" style="display:none; max-width:500px;"><h3>' . __( 'Tenancy Info', 'propertyhive' ) . '</h3>' . $fees . '</div>';
-						// }
-					?>
-				</span>
+					</span>
 				
 			</div>
 
@@ -194,22 +183,11 @@ global $post, $property;
                 <?php endif; ?>
                 <div class="cw-property-single-type">
                     <?php
-                        // if( $property->department == 'residential-sales' ) {
-                        //     $property_type_flag = 'For Sale';
-                        // } elseif( $property->department == 'residential-lettings' ) {
-                        //     $property_type_flag = $property->availability;
-                        // } elseif( $property->department == 'commercial' ) {
-                        //     $property_type_flag = 'Commercial';
-                        // } else {
-                        //     $property_type_flag = 'Inquire';
-                        // }
-
-                        if( isset($property->availability) or $property->availability != '' or !empty($property->availability) ) {
+                        if( !empty($property->availability) ) {
                             $property_type_flag = $property->availability;
                         } else {
                             $property_type_flag = 'Inquire';
                         }
-
                         echo $property_type_flag;
                     ?>
                 </div>

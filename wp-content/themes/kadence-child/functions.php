@@ -134,23 +134,22 @@ function tile_gallery_shortcode() {
     if ( (!isset($images) || !is_array($images) || empty($images) || count($images) < 5) ) {
         $import_data = get_post_meta( get_the_ID(), '_property_import_data', true );
         if ( !empty($import_data) ) {
-            // Use the existing parse_json_node helper function (in functions.php)
-            // This handles the malformed JSON that standard json_decode can't parse
-            $import_images = parse_json_node($import_data, 'Images');
-            
-            if ( is_array($import_images) && $import_images !== 'Node not found.' && count($import_images) >= 5 ) {
+            $import_json = json_decode($import_data, true);
+            $import_images = isset($import_json['images']) ? $import_json['images'] : array();
+
+            if ( is_array($import_images) && count($import_images) >= 5 ) {
                 $images = array();
-                
-                // Sort by Order field
+
                 usort($import_images, function($a, $b) {
-                    $order_a = isset($a['Order']) ? (int)$a['Order'] : 999;
-                    $order_b = isset($b['Order']) ? (int)$b['Order'] : 999;
+                    $order_a = isset($a['order']) ? (int)$a['order'] : 999;
+                    $order_b = isset($b['order']) ? (int)$b['order'] : 999;
                     return $order_a - $order_b;
                 });
-                
+
                 foreach ($import_images as $img) {
-                    if ( isset($img['Url']) && !empty($img['Url']) ) {
-                        $images[] = $img['Url']; // Store just the URL for ACF compatibility
+                    $url = isset($img['url']) ? $img['url'] : (isset($img['urls']['large']) ? $img['urls']['large'] : '');
+                    if ( !empty($url) ) {
+                        $images[] = $url;
                     }
                 }
             }
@@ -430,6 +429,35 @@ function set_development_tag($post_id, $property) {
                 update_post_meta($post_id, 'property_devt_tag', sanitize_text_field($tag['tag']));
             }
         }
+    }
+}
+
+/* ======================================== */
+/* Store furnished status from Street CRM
+ * Street provides lettingsListing.furnished but the import plugin doesn't store it.
+ * Added during Street CRM migration (Feb 2026)
+/* ======================================== */
+add_action("propertyhive_property_imported_street_json", 'set_furnished_status', 10, 2);
+function set_furnished_status($post_id, $property) {
+    if (!$post_id || !is_array($property)) {
+        return;
+    }
+
+    if (isset($property['lettingsListing']['furnished']) && !empty($property['lettingsListing']['furnished'])) {
+        $furnished_value = sanitize_text_field($property['lettingsListing']['furnished']);
+
+        // Get or create the furnished taxonomy term
+        $term = get_term_by('name', $furnished_value, 'furnished');
+        if (!$term) {
+            $result = wp_insert_term($furnished_value, 'furnished');
+            if (!is_wp_error($result)) {
+                wp_set_object_terms($post_id, (int)$result['term_id'], 'furnished');
+            }
+        } else {
+            wp_set_object_terms($post_id, (int)$term->term_id, 'furnished');
+        }
+    } else {
+        wp_delete_object_term_relationships($post_id, 'furnished');
     }
 }
 
@@ -799,14 +827,18 @@ function sold_label() { ?>
 
 
 /* ======================================== */
-/* Set property flags on import
+/* Set property flags on import (Street CRM)
  * Added by: Jeff
- * DEFERRED: Commented out during Street CRM migration (Feb 2026)
- * Will be rewritten once we see Street's imported data structure
- * for New Build, Shared Ownership, and Offer Accepted flags.
+ * Rewritten for Street CRM data structure (Feb 2026)
+ * Flags: 69 = New Build, 74 = Shared Ownership, 75 = Offer Accepted
+ * Street sources:
+ *   - New Build: attributes.property_age_bracket == "New Build"
+ *                OR salesListing.new_home / lettingsListing.new_home == true
+ *   - Shared Ownership: details.shared_ownership == true
+ *   - Offer Accepted: salesListing.status == "Sold STC" / lettingsListing.status == "Let Agreed"
+ *   - Tags: tags[].tag == 'shared_ownership'
 /* ======================================== */
-/*
-add_action("propertyhive_property_imported_dezrez_json", 'set_new_home_flag', 10, 2);
+add_action("propertyhive_property_imported_street_json", 'set_new_home_flag', 10, 2);
 function set_new_home_flag($post_id, $property) {
     if (!$post_id || !is_array($property)) {
         return;
@@ -814,35 +846,32 @@ function set_new_home_flag($post_id, $property) {
 
     $flags = array();
 
-    if (isset($property['Descriptions']) && is_array($property['Descriptions']) && !empty($property['Descriptions'])) {
-        foreach ($property['Descriptions'] as $description) {
-            if (isset($description['StyleType']['SystemName']) && trim(strtolower($description['StyleType']['SystemName'])) == 'new') {
-                $flags[] = 69;
-            }
-        }
+    // New Build flag (69)
+    if (
+        (isset($property['attributes']['property_age_bracket']) && $property['attributes']['property_age_bracket'] === 'New Build')
+        || (isset($property['salesListing']['new_home']) && $property['salesListing']['new_home'] === true)
+        || (isset($property['lettingsListing']['new_home']) && $property['lettingsListing']['new_home'] === true)
+    ) {
+        $flags[] = 69;
     }
 
-    if (isset($property['Price']['PriceQualifierType']['SystemName']) && $property['Price']['PriceQualifierType']['SystemName'] == 'SharedOwnership') {
+    // Shared Ownership flag (74)
+    if (isset($property['details']['shared_ownership']) && $property['details']['shared_ownership'] === true) {
         $flags[] = 74;
     }
-
-    if (isset($property['Tags']) && !empty($property['Tags'])) {
-        foreach ($property['Tags'] as $tag) {
-            if (isset($tag['Name']) && $tag['Name'] == 'shared_ownership') {
+    if (isset($property['tags']) && is_array($property['tags'])) {
+        foreach ($property['tags'] as $tag) {
+            if (isset($tag['tag']) && $tag['tag'] === 'shared_ownership' && !in_array(74, $flags)) {
                 $flags[] = 74;
             }
         }
     }
 
-    // availability flags
-    if (isset($property['Flags']) && is_array($property['Flags']) && !empty($property['Flags'])) {
-        foreach ($property['Flags'] as $flag) {
-            if (isset($flag['SystemName']) && !empty($flag['SystemName'])) {
-                if ($flag['SystemName'] == 'OfferAccepted') {
-                    $flags[] = 75;
-                }
-            }
-        }
+    // Offer Accepted flag (75) - Street uses status strings
+    $sales_status = isset($property['salesListing']['status']) ? $property['salesListing']['status'] : '';
+    $lettings_status = isset($property['lettingsListing']['status']) ? $property['lettingsListing']['status'] : '';
+    if (in_array($sales_status, array('Sold STC', 'Sold SSTC')) || $lettings_status === 'Let Agreed') {
+        $flags[] = 75;
     }
 
     if (!empty($flags)) {
@@ -851,7 +880,6 @@ function set_new_home_flag($post_id, $property) {
         wp_delete_object_term_relationships($post_id, 'marketing_flag');
     }
 }
-*/
 
 
 
@@ -2166,78 +2194,6 @@ function remove_availability( $post_id )
     wp_delete_object_term_relationships( $post_id, 'availability' );
 }
 
-/* ======================================== */
-/* Property Hive - Import Data Parser (DezRez)
- * DEPRECATED: Commented out during Street CRM migration (Feb 2026)
- * DezRez produced malformed JSON requiring custom parsing.
- * Street produces valid JSON - use json_decode() instead.
-/* ======================================== */
-/*
-function parse_json_node($json, $path) {
-    $data = parse_json_structure($json);
-    $keys = explode('>', $path);
-    $current = $data;
-    foreach ($keys as $key) {
-        if (is_array($current) && array_key_exists($key, $current)) {
-            $current = $current[$key];
-        } else {
-            return "Node not found.";
-        }
-    }
-    return $current;
-}
-
-function parse_json_structure($json) {
-    $json = trim($json);
-    $data = [];
-    if ($json[0] === '{') {
-        $json = substr($json, 1, -1);
-        $pairs = extract_key_value_pairs($json);
-        foreach ($pairs as $pair) {
-            list($key, $value) = explode(':', $pair, 2);
-            $key = trim($key, '"');
-            $data[$key] = interpret_value($value);
-        }
-    }
-    return $data;
-}
-
-function interpret_value($value) {
-    $value = trim($value);
-    if ($value[0] === '{') { return parse_json_structure($value); }
-    elseif ($value[0] === '[') { return parse_json_array($value); }
-    elseif ($value[0] === '"') { return trim($value, '"'); }
-    elseif (is_numeric($value)) { return strpos($value, '.') === false ? (int)$value : (float)$value; }
-    return $value;
-}
-
-function parse_json_array($json) {
-    $json = trim($json, '[]');
-    $elements = extract_key_value_pairs($json);
-    $array = [];
-    foreach ($elements as $element) { $array[] = interpret_value($element); }
-    return $array;
-}
-
-function extract_key_value_pairs($json) {
-    $pairs = [];
-    $buffer = '';
-    $depth = 0;
-    $in_quotes = false;
-    for ($i = 0, $length = strlen($json); $i < $length; $i++) {
-        $char = $json[$i];
-        if ($char === '"' && ($i === 0 || $json[$i - 1] !== '\\')) { $in_quotes = !$in_quotes; }
-        if (!$in_quotes) {
-            if ($char === '{' || $char === '[') $depth++;
-            if ($char === '}' || $char === ']') $depth--;
-        }
-        if ($char === ',' && $depth === 0 && !$in_quotes) { $pairs[] = trim($buffer); $buffer = ''; }
-        else { $buffer .= $char; }
-    }
-    if ($buffer !== '') { $pairs[] = trim($buffer); }
-    return $pairs;
-}
-*/
 
 /* ======================================== */
 /* Virtual Tour Video Handler Helper Functions
@@ -2297,21 +2253,6 @@ function include_sold_stc_properties( $q ){
 }
 /* ------------------------------------------ */
 
-/* Do not include STC in API results */
-/* REMOVED: DezRez-specific filter, not needed for Street CRM (Feb 2026)
- * Street handles status filtering via sales_status/lettings_status import config.
-add_filter( 'propertyhive_dezrez_json_api_calls', 'non_stc', 10, 2 );
-function non_stc($api_calls, $import_id)
-{
-    foreach ( $api_calls as $key => $api_call )
-    {
-        $api_calls[$key]['IncludeStc'] = 'false';
-    }
-
-    return $api_calls;
-}
-*/
-/* --------------------------------- */
 
 /* FAQ Custom Block */
 function register_acf_cw_faqs_block() {
@@ -2401,41 +2342,6 @@ function hide_multiple_plugin_updates( $value ) {
 }
 add_filter( 'site_transient_update_plugins', 'hide_multiple_plugin_updates' );
 
-/* DEPRECATED: DezRez-specific helper functions - commented out during Street CRM migration (Feb 2026)
- * These functions relied on parse_json_structure() which parsed DezRez's malformed JSON.
- * Street uses standard JSON, so these are no longer needed.
-
-function get_description_by_type($json_data, $type_name, $field = null) {
-    $data = parse_json_structure($json_data);
-    if (!isset($data['Descriptions']) || !is_array($data['Descriptions'])) { return "Node not found."; }
-    foreach ($data['Descriptions'] as $description) {
-        if (isset($description['DescriptionType']['Name']) && $description['DescriptionType']['Name'] === $type_name) {
-            if ($field === null) { return $description; }
-            $keys = explode('>', $field);
-            $current = $description;
-            foreach ($keys as $key) {
-                if (is_array($current) && array_key_exists($key, $current)) { $current = $current[$key]; }
-                else { return "Node not found."; }
-            }
-            return $current;
-        }
-    }
-    return "Node not found.";
-}
-
-function get_marketing_text_branch_ids() {
-    return apply_filters('propertyhive_marketing_text_branches', array('6965412'));
-}
-
-function clean_imported_description($text) {
-    if (empty($text) || $text === 'Node not found.') { return ''; }
-    $text = str_replace('n<', "\n<", $text);
-    $text = str_replace('\r\n', "\n", $text);
-    $text = str_replace('\n', "\n", $text);
-    $text = stripslashes($text);
-    return apply_filters('propertyhive_clean_description', $text);
-}
-*/
 
 /**
  * ValPal Plugin - Custom JavaScript Migration

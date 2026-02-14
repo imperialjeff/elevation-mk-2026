@@ -23,7 +23,7 @@ global $post;
 
         <p><?php _e( 'Want to speak with someone from the team?', 'propertyhive' ); ?></p>
         <ul class="enquiry-alternate-calls">
-            <li class="icon-whatsapp"><a href="#">WhatsApp Chat</a></li>
+            <li class="icon-whatsapp"><a href="https://wa.me/441234271566?text=<?php echo urlencode('I am enquiring about: ' . get_the_title()); ?>">WhatsApp Chat</a></li>
             <li class="icon-phone"><a href="tel:01234271566">01234 271566</a></li>
         </ul>
         
