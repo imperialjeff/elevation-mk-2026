@@ -1,0 +1,16 @@
+{
+    "name": "acf/locrating-module",
+    "title": "CW Locrating Module",
+    "description": "A custom block that displays a Locrating map and feature buttons based on Longitude and Latitude values.",
+    "style": [ "file:./locrating_module.css" ],
+    "category": "conversationware-blocks",
+    "icon": "grid-view",
+    "keywords": ["locrating", "map", "module", "cw"],
+    "acf": {
+        "mode": "preview",
+        "renderTemplate": "locrating_module.php"
+    },
+    "supports": {
+        "anchor": true
+    }
+}

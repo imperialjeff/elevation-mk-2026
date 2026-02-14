@@ -1,0 +1,16 @@
+{
+    "name": "acf/developments-grid",
+    "title": "CW Developments Grid",
+    "description": "A custom block that displays a filterable list of Custom Developments.",
+    "style": [ "file:./developments_grid.css" ],
+    "category": "conversationware-blocks",
+    "icon": "grid-view",
+    "keywords": ["development", "developments", "grid", "cw"],
+    "acf": {
+        "mode": "preview",
+        "renderTemplate": "developments_grid.php"
+    },
+    "supports": {
+        "anchor": true
+    }
+}

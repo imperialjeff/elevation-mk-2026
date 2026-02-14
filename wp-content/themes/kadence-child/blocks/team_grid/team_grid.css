@@ -1,0 +1,141 @@
+/* Team grid container */
+.team-members-container {
+    display: grid;
+    gap: 20px;
+    padding: 10px;
+}
+
+/* Three-column layout */
+.team-columns3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Two-column layout */
+.team-columns2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Four-column layout */
+.team-columns4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) { /* Tablet breakpoint */
+    .team-columns3, .team-columns2, .team-columns4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) { /* Mobile breakpoint */
+    .team-columns3, .team-columns2, .team-columns4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Team member card */
+.team-member {
+    background-color: #fff;
+    border: 4px solid var(--global-palette4);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Profile image */
+.team-member-profile-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Details container */
+.team-member-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px;
+}
+
+/* Name and role text */
+.single-content .team-member-details-text h4 {
+    margin: 0 0 0 0;
+    color: var(--global-palette5);
+    font-size: 22px;
+}
+
+.single-content .team-member-details-text p {
+    margin: 0 0 2px 0;
+    color: var(--global-palette6);
+    font-size: 14px;
+    line-height: 1.4; /* Improved readability */
+}
+
+/* WhatsApp icon */
+.team-member-details-whatsapp {
+    margin-top: 10px;
+}
+
+.team-member-details-whatsapp img {
+    width: 34px;
+    height: 34px;
+}
+
+.team-filter-container {
+    margin-bottom: 20px;
+}
+
+.team-filter {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    min-width: 200px;
+}
+
+.team-filter-container {
+    padding-left: 10px;
+}
+
+.team-filter-container h5 {
+    margin-top: 30px !important;
+}
+
+/* Desktop-specific adjustments */
+@media (min-width: 1024px) { /* Desktop breakpoint */
+    .team-member-details {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .team-member-details-whatsapp {
+        margin-left: auto;
+    }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) { /* Mobile breakpoint */
+    .team-member-details {
+        align-items: center;
+    }
+
+    .team-member-details-text {
+        text-align: center;
+    }
+
+    .team-member-details-whatsapp {
+        margin-top: 15px;
+    }
+}
+@media screen and (min-width: 768px) {
+    .team-member-details-whatsapp {
+        display: none;
+    }
+}
+@media (max-width: 768px) and (min-width: 500px) {
+    .location-page-team .team-columns3, 
+    .location-page-team .team-columns2, 
+    .location-page-team .team-columns4 {
+        grid-template-columns: 2fr;
+    }
+}

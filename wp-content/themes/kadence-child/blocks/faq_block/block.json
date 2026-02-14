@@ -1,0 +1,21 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 2,
+    "name": "acf/cw-faqs",
+    "title": "CW FAQs",
+    "description": "Display FAQs with search and filter functionality.",
+    "category": "widgets",
+    "icon": "editor-help",
+    "keywords": ["faq", "questions", "answers"],
+    "acf": {
+        "mode": "edit",
+        "renderTemplate": "render.php"
+    },
+    "supports": {
+        "anchor": true,
+        "align": true
+    },
+    "style": "cw-faq-block-style",
+    "editorScript": null,
+    "script": "cw-faq-block-frontend"
+}

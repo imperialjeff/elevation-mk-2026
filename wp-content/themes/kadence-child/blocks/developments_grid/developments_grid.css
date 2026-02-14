@@ -1,0 +1,124 @@
+.developments-grid-container > a {
+    display: flex;
+    flex-direction: row;
+    gap: 25px;
+    background-color: var(--global-palette5);
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.developments-grid-container > a:hover {
+    background-color: var(--global-palette4);
+}
+
+.development-grid-thumbnail img {
+    border-radius: 0;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.developments-grid-container {
+    display: flex;
+    flex-direction: row;
+    gap: 35px;
+}
+
+.development-grid-thumbnail {
+    width: 35%;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+a.development-completed .development-grid-thumbnail {
+    filter: grayscale(100%);
+}
+
+.development-grid-thumbnail .flag.flag-completed {
+    position: absolute;
+    font-size: 18px;
+    background-color: var(--global-palette5);
+    color: var(--global-palette9);
+    font-weight: bold;
+    border: 3px solid var(--global-palette5);
+    top: 15px;
+    left: 0px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    padding: 5px 15px;
+    text-transform: uppercase;
+    box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.2);
+}
+
+.development-grid-details {
+    width: 65%;
+    padding: 35px;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.developments-grid-container h3, 
+.developments-grid-container p {
+    color: var(--global-palette9);
+}
+
+.development-grid-details p {
+    font-size: 16px;
+    line-height: 25px;
+}
+
+.single-content .developments-grid-container h3 {
+    margin-top: 5px;
+    margin-bottom: 15px;
+    font-size: 30px;
+    line-height: 35px;
+}
+
+.developments-grid-container span {
+    color: var(--global-palette9);
+    font-size: 14px;
+    line-height: 14px;
+}
+
+.developments-grid-container button {
+    color: var(--global-palette-btn-bg);
+    background: transparent;
+    padding: 10px 13px 10px 20px;
+    border: 2px solid var(--global-palette9);
+    max-width: 190px;
+}
+
+.developments-grid-container button:after {
+    content: "";
+    background: url(/wp-content/uploads/2024/04/MK-Compass-Icon-2.png) no-repeat center center;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-left: 5px;
+    position: relative;
+    top: 2px;
+}
+
+@media (max-width: 989px) {
+    .developments-grid-container > a {
+        flex-direction: column;
+    }
+    .development-grid-thumbnail,
+    .development-grid-details {
+        width: 100%;
+        max-width: unset;
+    }
+    .development-grid-thumbnail {
+        padding-bottom: 56.25%;
+    }
+    .development-grid-thumbnail img {
+        width: 100%;
+    }
+    .development-grid-details {
+        padding: 25px;
+    }
+}

@@ -1,0 +1,588 @@
+<?php
+/**
+ * The template for displaying property content in the single-property.php template
+ *
+ * Override this template by copying it to yourtheme/propertyhive/content-single-property.php
+ *
+ * @author      PropertyHive
+ * @package     PropertyHive/Templates
+ * @version     1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
+global $post, $property;
+?>
+
+<?php
+    if ( post_password_required() )  {
+        echo get_the_password_form();
+        return;
+    }
+
+    // $property_import_data removed - no longer needed after Street CRM migration (Feb 2026)
+?>
+
+
+<div id="property-<?php the_ID(); ?>" <?php post_class(); ?>>
+
+    <?php
+        /**
+         * propertyhive_before_single_property_summary hook
+         *
+         * @hooked propertyhive_template_not_on_market - 5
+         * @hooked propertyhive_show_property_images - 10
+         */
+        do_action( 'propertyhive_before_single_property_summary' );
+    ?>
+
+    <div class="property-breadcrumbs-container">
+        <div class="cw-content-width property-breadcrumbs">
+            <?php
+                if ( function_exists('yoast_breadcrumb') ) {
+                    yoast_breadcrumb( '<p id="breadcrumbs">','</p>' );
+                }
+            ?>
+        </div>
+    </div>
+
+    <div class="summary entry-summary cw-content-width">
+        <div class="cw-property-title-row">
+            <div class="cw-property-title-row-headings">
+                <?php
+                    $development_tag = get_field( 'property_devt_tag' );
+                    if( !empty($development_tag) ) {
+                        $args_dev_lookup = array(
+                            'post_type'      => 'property-development',
+                            'posts_per_page' => 1,
+                            'meta_query'     => array(
+                                array(
+                                    'key'   => 'development_property_tag',
+                                    'value' => $development_tag,
+                                    'compare' => '=', 
+                                ),
+                            ),
+                        );
+                        $query_dev_lookup = new WP_Query($args_dev_lookup);
+                        if ($query_dev_lookup->have_posts()) {
+                            while ($query_dev_lookup->have_posts()) {
+                                $query_dev_lookup->the_post();
+                                echo '<h5><a href="' . get_the_permalink() . '">â€¹ Back to Developments: ' . get_the_title() . '</a></h5>';
+                            }
+                        }
+                        wp_reset_postdata();
+                    }
+                ?>
+
+                <?php
+                    $property_address = array();
+                    $property_address['street'] = $property->address_street;
+                    $property_address['locality'] = $property->address_two;
+                    $property_address['town'] = $property->address_three;
+
+                    if( !empty($property_address['locality']) ) {
+                        $address_title_string = $property_address['street'] . ', ' . $property_address['locality'];
+                    } else {
+                        $address_title_string = $property_address['street'] . ', ' . $property_address['town'];
+                    }
+                ?>
+                <h1 class="cw-property-title"><?php echo $address_title_string; ?></h1>
+            </div>
+			<!-- <div class="cw-property-btn-price">
+				<div class="property-valuation-icon-button">
+                <a class="button" href="<?php echo get_home_url(); ?>/property-valuation/">Request for Property Valuation</a>
+            </div> -->
+				<span class="cw-property-single-price">
+                    <?php echo $property->get_formatted_price(); ?>
+                    <?php if( !empty( $property->price_qualifier ) ) : ?>
+                        <p class="cw-single-qualifier">
+                            <?php 
+                                echo $property->price_qualifier; 
+                            ?>
+                        </p>
+                    <?php endif; ?>
+					<?php
+                        // $price_qualifier = $property->PriceQualifierType;
+						// if ( $price_qualifier != '' ) {
+						// 	echo ' <span class="price-qualifier">' . $price_qualifier . '</span>';
+						// }
+
+						// if ( $fees != '' ) {
+						// 	echo ' <span class="lettings-fees"><a data-fancybox data-src="#propertyhive_lettings_fees_popup" href="javascript:;">' . __( 'Tenancy Info', 'propertyhive' ) . '</a></span>';
+						// 	echo '<div id="propertyhive_lettings_fees_popup" style="display:none; max-width:500px;"><h3>' . __( 'Tenancy Info', 'propertyhive' ) . '</h3>' . $fees . '</div>';
+						// }
+					?>
+				</span>
+				
+			</div>
+
+            <div class="cw-property-keys">
+                
+                <?php 
+                $property_type_helper = $property->property_type;
+                    if( $property->department == 'residential-sales' and !empty($property_type_helper) ) {
+                        echo '<div class="cw-property-key cw-property-key-type">';
+                        echo '<h5>Property Type</h5>';
+                        echo '<p>' . $property->property_type . '</p>';
+                        echo '</div>';
+                    }
+                ?>
+
+                <?php
+                    $property_beds_helper = $property->bedrooms;
+                    if( !empty($property_beds_helper) ) {
+                        echo '<div class="cw-property-key cw-property-key-beds">';
+                        echo '<h5>Beds</h5>';
+                        echo '<p><span class="icon-king_bed"></span> x ' . $property_beds_helper . '</p>';
+                        echo '</div>';
+                    }
+                ?>
+
+                <?php
+                    $property_baths_helper = $property->bathrooms;
+                    if( !empty($property_baths_helper ) ) {
+                        echo '<div class="cw-property-key cw-property-key-baths">';
+                        echo '<h5>Baths</h5>';
+                        echo '<p><span class="icon-bathtub"></span> x ' . $property_baths_helper . '</p>';
+                        echo '</div>';
+                    }
+
+                    $furnish_level_helper = $property->furnished;
+                    if( !empty($furnish_level_helper) ) {
+                        echo '<div class="cw-property-key cw-property-key-furnish">';
+                        echo '<h5>Furnished</h5>';
+                        echo '<p>' . $furnish_level_helper . '</p>';
+                        echo '</div>';
+                    }
+                ?>
+
+                <?php
+                    if( $property->department == 'residential-lettings' ) {
+                        // Updated for Street CRM migration (Feb 2026) - uses post meta instead of JSON parsing
+                        $property_deposit = get_post_meta(get_the_ID(), '_deposit', true);
+                        if (!empty($property_deposit)) {
+                            echo '<div class="cw-property-key cw-property-key-term">';
+                            echo '<h5>Deposit</h5>';
+                            echo '<p>£' . esc_html(number_format((float)$property_deposit)) . '</p>';
+                            echo '</div>';
+                        }
+
+                        $available_date_helper = $property->get_available_date();
+                        if( !empty($available_date_helper) ) {
+                            echo '<div class="cw-property-key cw-property-key-available-date">';
+                            echo '<h5>Available</h5>';
+                            echo '<p>' . $available_date_helper . '</p>';
+                            echo '</div>';
+                        }
+                    } else {
+                        $property_tenure = $property->tenure;
+                        if( !empty($property_tenure) ) {
+                            echo '<div class="cw-property-key cw-property-key-tenure">';
+                            echo '<h5>Tenure</h5>';
+                            echo '<p>' . $property_tenure . '</p>';
+                            echo '</div>';
+                        }
+                    }
+                ?>
+
+                <?php $floorplans = $property->get_floorplan_attachment_ids(); ?>
+                <?php if( !empty($property->get_floorplan_attachment_ids()) ) : ?>
+                    <div class="cw-property-key cw-property-key-tenure">
+                        <h5>Floorplans</h5>
+                        <a class="btn btn-floorplans cw-btn cw-btn-floorplans" href="#PropertyFloorPlans">Click to View <?php echo '(' . count($floorplans) . ')'; ?></a>
+                    </div>
+                <?php endif; ?>
+                <div class="cw-property-single-type">
+                    <?php
+                        // if( $property->department == 'residential-sales' ) {
+                        //     $property_type_flag = 'For Sale';
+                        // } elseif( $property->department == 'residential-lettings' ) {
+                        //     $property_type_flag = $property->availability;
+                        // } elseif( $property->department == 'commercial' ) {
+                        //     $property_type_flag = 'Commercial';
+                        // } else {
+                        //     $property_type_flag = 'Inquire';
+                        // }
+
+                        if( isset($property->availability) or $property->availability != '' or !empty($property->availability) ) {
+                            $property_type_flag = $property->availability;
+                        } else {
+                            $property_type_flag = 'Inquire';
+                        }
+
+                        echo $property_type_flag;
+                    ?>
+                </div>
+            </div>
+            
+            
+        </div>
+
+        <!-- 
+        <div class="cw-property-single-loc">
+            <span class="icon-location"></span><?php // echo $property->address_four; ?>
+        </div>
+        -->
+
+        <?php
+            /**
+             * propertyhive_single_property_summary hook
+             *
+             * @hooked propertyhive_template_single_title - 5
+             * @hooked propertyhive_template_single_floor_area - 7
+             * @hooked propertyhive_template_single_price - 10
+             * @hooked propertyhive_template_single_meta - 20
+             * @hooked propertyhive_template_single_sharing - 30
+             */
+            // do_action( 'propertyhive_single_property_summary' );
+            
+        ?>
+
+    </div><!-- .summary -->
+
+    <?php
+        /**
+         * propertyhive_after_single_property_summary hook
+         *
+         * @hooked propertyhive_template_single_actions - 10
+         * @hooked propertyhive_template_single_features - 20
+         * @hooked propertyhive_template_single_summary - 30
+         * @hooked propertyhive_template_single_description - 40
+         */
+       // do_action( 'propertyhive_after_single_property_summary' );
+    ?>
+
+    <div class="cw-property-single-cols cw-content-width clearfix">
+        <div class="cw-property-single-details">
+            <div class="cw-property-single-section cw-property-single-overview">
+                <h3>Overview</h3>
+                <ul class="features-list">
+                    <?php $features = $property->get_features(); foreach ($features as $feature) { ?>
+                        <li><?php echo $feature; ?></li>
+                    <?php } ?>
+                </ul>
+
+                <div class="action-make-enquiry action-make-enquiry-content">
+                    <?php if($property->department == 'residential-lettings') : ?>
+                        <a href="<?php echo get_home_url(); ?>/lettings/letting-enquiry/?reference=<?php echo get_post_meta( $post->ID, '_reference_number', true ); ?>&price=<?php echo $property->get_formatted_price(); ?>&address=<?php echo urlencode($property->address_concatenated) . '#Enquiry_Form'; ?>"><?php _e( 'Make Enquiry', 'propertyhive' ); ?></a>
+                    <?php else : ?>
+                        <a data-fancybox data-src="#makeEnquiry<?php echo $post->ID; ?>" href="javascript:;"><?php _e( 'Make Enquiry', 'propertyhive' ); ?></a>
+
+                        <!-- LIGHTBOX FORM -->
+                        <div id="makeEnquiry<?php echo $post->ID; ?>" style="display:none;">
+                            
+                            <h2><?php _e( 'Make Enquiry', 'propertyhive' ); ?></h2>
+                            
+                            <p><?php _e( 'Please complete the form below and a member of staff will be in touch shortly.', 'propertyhive' ); ?></p>
+                            
+                            <p><?php _e( 'Want to speak with someone from the team, instead?', 'propertyhive' ); ?></p>
+                            <ul class="enquiry-alternate-calls">
+                            <li class="alternate-whatsapp"><span class="icon-whatsapp"></span><a href="https://wa.me/441234271566?text=<?php echo urlencode('I am interested in this property: ' . get_the_title() . ' [Ref# ' . get_post_meta( get_the_ID(), '_reference_number', true ) . ']' ); ?>">WhatsApp Chat</a></li>
+                                <li class="alternate-phone"><span class="icon-phone"></span><a href="tel:441234271566">441234271566</a></li>
+                            </ul>
+                            
+                            <?php propertyhive_enquiry_form(); ?>
+                            
+                        </div>
+                        <!-- END LIGHTBOX FORM -->
+                    <?php endif; ?>
+                    
+                </div>
+
+                <div class="cw-property-single-share">
+                    <span>Share Via: </span>
+                    <a class="button" href="mailto:?subject=<?php echo urlencode('Great property in Milton Keynes'); ?>&body=<?php echo urlencode('Check out this Milton Keynes property I found with Compass Elevation - ' . get_permalink() . '.'); ?>" target="_blank:" rel="noreferrer noopener"><span class="icon-envelop"></span> Mail</a>
+                    <a class="button" href="https://wa.me/?text=<?php echo urlencode('Check out this Milton Keynes property I found with Compass Elevation' . ' [Ref#' . get_post_meta( get_the_ID(), '_reference_number', true ) . '] - ' . get_permalink()); ?>" data-action="share/whatsapp/share"><span class="icon-whatsapp"></span> WhatsApp</a>
+                    <a class="button buttonCopyLink" type="button" onclick="CopyURL();"><span class="icon-link"></span> Copy Link</a>
+                </div>
+
+                <?php 
+                    // Updated for Street CRM migration (Feb 2026) - uses post meta instead of JSON parsing
+                    $property_epc_eercurrent = get_post_meta(get_the_ID(), '_epc_eec', true);
+                    $property_epc_eerpotential = get_post_meta(get_the_ID(), '_epc_eep', true);
+                    $epc_attachment_ids = $property->get_epc_attachment_ids();
+                    $property_epc_image_url = !empty($epc_attachment_ids) ? wp_get_attachment_url($epc_attachment_ids[0]) : '';
+
+                    if( !empty($property_epc_eercurrent) && !empty($property_epc_eerpotential) ) { ?>
+                        <section class="epc-accordion">
+                            <div class="epc-accordion-tab">
+                                <input type="checkbox" name="accordion-1" id="cb1">
+                                <label for="cb1" class="epc-accordion-label">
+                                    <div class="epc-quick-details-container">
+                                        Energy Performance Certificate (EPC) Rating:
+                                        <div class="epc-quick-details">
+                                            <span><strong><?php echo $property_epc_eercurrent; ?></strong> (Current)</span>
+                                            <span><strong><?php echo $property_epc_eerpotential; ?></strong> (Potential)</span>
+                                        </div>
+                                    </div>
+                                </label>
+                            
+                                <div class="epc-accordion-content">
+                                    <div class="epc-image-chart">
+                                        <a data-fancybox data-src="<?php echo $property_epc_image_url; ?>" href="javascript:;"><img src="<?php echo $property_epc_image_url; ?>" alt="" class="epc-image" /></a>
+                                        <div class="epc-rating-lightbox"></div>
+                                    </div>
+                                    <div class="epc-details">
+                                        <p>Did you know the average EPC Rating in the UK is B and D?</p>
+                                        <div class="epc-rating-large-container">
+                                            <div class="epc-rating-large epc-rating-large-current">
+                                                <p class="epc-rating-large-value"><?php echo $property_epc_eercurrent; ?></p>
+                                                <p class="epc-rating-large-label">Current</p>
+                                            </div>
+                                            <div class="epc-rating-large epc-rating-large-potential">
+                                                <p class="epc-rating-large-value"><?php echo $property_epc_eerpotential; ?></p>
+                                                <p class="epc-rating-large-label">Potential</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        
+                    <?php
+                    }
+                ?>
+            </div>
+
+            <div class="cw-property-single-section cw-property-single-valuation clearfix">
+                <div class="cw-valuation-icon">
+                    <img src="<?php echo get_site_url(); ?>/wp-content/uploads/2024/11/RequestPropertyValuationIconGreen.png" alt="Property Valuation" title="Property Valuation" />
+                </div>
+                <div class="cw-valuation-content clearfix">
+                    <div class="cw-valuation-content-left">
+                        <h3>Find out your home's value</h3>
+                        <p>For an up-to-date market appraisal of your property, request a valuation now.</p>
+                    </div>
+                    <div class="cw-valuation-content-right">
+                        <a href="<?php echo get_home_url(); ?>/property-valuation/" class="button">Request Valuation</a>
+                    </div>
+                </div>
+            </div>
+
+            <?php if( !empty($property->get_floorplan_attachment_ids()) ) : ?>
+                <div class="cw-property-single-section cw-property-single-floorplans" id="PropertyFloorPlans">
+                    <h3>Floorplans</h3>
+                    <?php
+                        $floorplan_output = '<div class="cw-single-floorplans">';
+                        foreach ($floorplans as $floorplan ) {
+                            $floorplan_output .= '<div class="cw-floorplan-item">';
+                            $floorplan_output .= '<a href="' . wp_get_attachment_url( $floorplan ) . '" class="fancybox" data-fancybox>';
+                            $floorplan_output .= wp_get_attachment_image( $floorplan, 'medium' );
+                            $floorplan_output .= '</a>';
+                            $floorplan_output .= '</div>';
+                        }
+                        $floorplan_output .= '</div>';
+
+                        echo $floorplan_output;                
+                    ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="cw-property-single-section cw-property-single-descriptions">
+                <h3>Description</h3>
+
+                <?php
+                    // Updated for Street CRM migration (Feb 2026)
+                    // Street importer stores full description in rooms structure and short description in post_excerpt
+                    // Using PropertyHive's built-in methods (CRM-agnostic)
+                    echo get_the_excerpt();
+                    echo $property->get_formatted_description();
+
+                    // inLinks generated text
+                    if( !empty($property_address['locality'])) {
+                        echo ' Estate Agents ' . $property_address['locality'];
+                    } else {
+                        echo ' Estate Agents Milton Keynes';
+                    }
+                ?>
+            </div>
+
+            <?php
+                $virtual_tours = $property->get_virtual_tour_urls();
+                
+                if( !empty($virtual_tours) ) {
+                    foreach ($virtual_tours as $virtual_tour) {
+                        
+                        $broken_url = checkBrokenVideoUrls($virtual_tour);
+                        if (empty($broken_url)) {
+                            echo '<div class="cw-property-single-section cw-property-single-tour">';
+                            echo '<h3>Virtual Tour</h3>';
+                            embedVideos($virtual_tour);
+                            echo '</div>';
+                        }
+                    }
+                }
+            ?>
+
+            <?php
+                $similar_properties_output = do_shortcode( '[similar_properties property_id=' . $property->id . ' per_page="2" price_percentage_bounds="25"]' );
+                if( !str_contains($similar_properties_output, 'no-results-message') ) {
+                    echo '<div class="cw-similar-properties-wrapper">';
+                    echo '<h3>Similar Properties</h3>';
+                    echo $similar_properties_output;
+                    echo '</div>';
+                }
+            ?>
+
+        </div>
+        <div class="cw-property-single-sidebar">
+            
+
+            <div class="cw-property-single-section cw-property-single-map">
+                <h3>Map</h3>
+                <div id="single_property_map" style="width:100%; height:430px"></div>
+                <script type="text/javascript">
+                    var lat = '<?php echo $property->latitude ?>';
+                    var lng = '<?php echo $property->longitude ?>';
+
+                    jQuery(document).ready(function($){
+
+                        loadLocratingPlugin({ 
+                            id: 'single_property_map', 
+                            lat: '<?php echo $property->latitude ?>', 
+                            lng: '<?php echo $property->longitude ?>', 
+                            type: 'all', 
+                            mapstyle: 'voyager', 
+                            menucolor: '#401663', 
+                            menubackcolor: '#e6e7e8', 
+                            menuselectcolor: '#feeff8', 
+                            menuselectbackcolor: '#ae8a65', 
+                            menuallcaps: 'true', 
+                            icon: 'https://www.locrating.com/html5/assets/images/house_icon2.png', 
+                            lazyload:true ,
+                            // hidemenu: true,
+                        });
+                    });
+                </script>
+
+                <div class="property_actions cw-property-single-actions">
+                    <div class="cw-property_actions-notice">
+                        <p>View fullscreen interactive maps of points of interest around this property.</p>
+                    </div>
+
+                    <?php do_action( 'propertyhive_property_actions_start' ); ?>
+
+                    <ul class="clearfix">
+                        
+                        <?php 
+                        /**
+                             * propertyhive_single_property_summary hook
+                             *
+                             * @hooked propertyhive_make_enquiry_button - 10
+                             * 
+                             */
+                            do_action( 'propertyhive_property_actions_list_start' ); 
+                        ?>
+                        
+                        <li class="action-locrating-all-in-one">
+                            <a href="https://www.locrating.com" onclick="try{return openLocratingWindow({lat: <?php echo $property->latitude; ?>, lng : <?php echo $property->longitude; ?>, type:'all'});}catch (err) {}">Full Map</a>
+                        </li>
+
+                        <?php
+                        // FIX: Initialize $actions variable properly
+                        if (!isset($actions)) {
+                            // Get actions from PropertyHive filters/hooks
+                            $actions = apply_filters('propertyhive_property_actions', array(), $property);
+                        }
+                        
+                        // FIX: Ensure $actions is an array and not empty before foreach
+                        if (is_array($actions) && !empty($actions)) {
+                            foreach ($actions as $action) {
+                                // FIX: Validate that $action is an array and has required keys
+                                if (!is_array($action) || !isset($action['href']) || !isset($action['label'])) {
+                                    continue;
+                                }
+                                
+                                $action['class'] = ( isset( $action['class'] ) ) ? $action['class'] : '';
+                                
+                                echo '
+                                <li class="' . esc_attr($action['class']) . '"';
+                                if ( isset( $action['parent_attributes'] ) && is_array($action['parent_attributes']) && ! empty( $action['parent_attributes'] ) )
+                                {
+                                    foreach ( $action['parent_attributes'] as $key => $value )
+                                    {
+                                        echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+                                    }
+                                }
+                                echo '><a href="' . esc_url($action['href']) . '"';
+                                if ( isset( $action['attributes'] ) && is_array($action['attributes']) && ! empty( $action['attributes'] ) )
+                                {
+                                    foreach ( $action['attributes'] as $key => $value )
+                                    {
+                                        echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+                                    }
+                                }
+                                echo '>' . esc_html($action['label']) . '</a></li>
+                                ';
+                            }
+                        } else {
+                            // FIX: Add default actions if no actions are available
+                            $default_actions = array(
+                                array(
+                                    'href' => 'https://www.locrating.com',
+                                    'label' => 'Schools',
+                                    'class' => 'action-locrating-schools',
+                                    'attributes' => array(
+                                        'onclick' => 'try{return openLocratingWindow({lat: ' . $property->latitude . ', lng : ' . $property->longitude . ', type:\'schools\'});}catch (err) {}'
+                                    )
+                                ),
+                                array(
+                                    'href' => 'https://www.locrating.com',
+                                    'label' => 'Amenities', 
+                                    'class' => 'action-locrating-amenities',
+                                    'attributes' => array(
+                                        'onclick' => 'try{return openLocratingWindow({lat: ' . $property->latitude . ', lng : ' . $property->longitude . ', type:\'localinfo\'});}catch (err) {}'
+                                    )
+                                ),
+                                array(
+                                    'href' => 'https://www.locrating.com',
+                                    'label' => 'Transport',
+                                    'class' => 'action-locrating-transport', 
+                                    'attributes' => array(
+                                        'onclick' => 'try{return openLocratingWindow({lat: ' . $property->latitude . ', lng : ' . $property->longitude . ', type:\'stationslist\'});}catch (err) {}'
+                                    )
+                                ),
+                                array(
+                                    'href' => 'https://www.locrating.com',
+                                    'label' => 'Broadband',
+                                    'class' => 'action-locrating-broadband-checker',
+                                    'attributes' => array(
+                                        'onclick' => 'try{return openLocratingWindow({lat: ' . $property->latitude . ', lng : ' . $property->longitude . ', type:\'broadband\', showmap: \'true\'});}catch (err) {}'
+                                    )
+                                ),
+                                array(
+                                    'href' => 'https://www.locrating.com',
+                                    'label' => 'Area Info',
+                                    'class' => 'action-locrating-all-in-one',
+                                    'attributes' => array(
+                                        'onclick' => 'try{return openLocratingWindow({lat: ' . $property->latitude . ', lng : ' . $property->longitude . ', type:\'all\'});}catch (err) {}'
+                                    )
+                                )
+                            );
+                            
+                            foreach ($default_actions as $action) {
+                                echo '<li class="' . esc_attr($action['class']) . '">';
+                                echo '<a href="' . esc_url($action['href']) . '"';
+                                if (isset($action['attributes']) && is_array($action['attributes'])) {
+                                    foreach ($action['attributes'] as $key => $value) {
+                                        echo ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+                                    }
+                                }
+                                echo '>' . esc_html($action['label']) . '</a>';
+                                echo '</li>';
+                            }
+                        }
+                        ?>
+                        
+                        <?php do_action( 'propertyhive_property_actions_list_end' ); ?>
+
+                    </ul>
+
+                    <?php do_action( 'propertyhive_property_actions_end' ); ?>
+                </div>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+</div><!-- #property-<?php the_ID(); ?> -->

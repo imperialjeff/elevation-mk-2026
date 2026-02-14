@@ -1,0 +1,16 @@
+{
+    "name": "acf/property-grid",
+    "title": "CW Property Grid",
+    "description": "A custom block that displays a filterable grid of properties from PropertyHive.",
+    "style": [ "file:./property_grid.css" ],
+    "category": "conversationware-blocks",
+    "icon": "grid-view",
+    "keywords": ["property", "grid", "cw"],
+    "acf": {
+        "mode": "edit",
+        "renderTemplate": "property_grid.php"
+    },
+    "supports": {
+        "anchor": true
+    }
+}

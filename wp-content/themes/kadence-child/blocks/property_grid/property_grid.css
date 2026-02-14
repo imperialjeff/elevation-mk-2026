@@ -1,0 +1,291 @@
+.propertyhive ul.properties li .thumbnail { float:none; width:100%; }
+.propertyhive ul.properties li .thumbnail img { width:100%; }
+.propertyhive ul.properties li .details { float:none; width:100%; }
+
+.propertyhive-properties-shortcode.columns-3 ul.properties li .thumbnail {
+    float: none;
+    width: 100%;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties {
+    display: flex;
+  flex-wrap: wrap;
+    gap: 20px;
+    padding-left: 0;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties li {
+    flex-grow: 1;
+    width: calc((100% - 40px) / 3);
+    list-style: none;
+    padding: 0 0 025px 0;
+    background: none;
+
+}
+.propertyhive-properties-shortcode.propertyhive .thumbnail {
+    max-height: 245px;
+    overflow: hidden;
+}
+
+ul.properties li .actions {
+    display: none;
+}
+
+.propertyhive ul.properties li {
+    background-color: var(--global-palette9);
+    padding-top: 0;
+    margin-bottom: 2%;
+    position: relative;
+    border: 3px solid var(--global-palette5);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.propertyhive ul.properties li .details {
+    padding: 15px;
+}
+
+.propertyhive ul.properties li a.button {
+    border-radius: 26px;
+    font-size: 16px;
+    font-weight: bold;
+    border-width: 3px;
+    display: block;
+    margin: auto auto 0;
+    text-align: center;
+    width: calc(100% - 30px);
+}
+
+.propertyhive ul.properties li .details h3 {
+    font-size: 18px;
+    line-height: 1.2em;
+    font-family: var(--global-body-font-family);
+    margin-bottom: 0;
+}
+
+span.cw-property-tenure {
+    font-size: 14px;
+    text-transform: uppercase;
+    line-height: 1;
+    margin: 5px 0 10px 0;
+    display: block;
+}
+
+.cw-price-loc {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    align-items: flex-start;
+}
+
+.propertyhive .details .price {
+    font-size: 22px;
+    color: var(--global-palette1);
+    font-family: var(--global-heading-font-family);
+}
+
+.propertyhive .details .summary {
+    font-size: 14px;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.propertyhive .details .location {
+    font-size: 14px;
+}
+
+.propertyhive .details .rooms {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.propertyhive .details .rooms .room,
+.room.room-photos {
+    font-size: 14px;
+    margin: 5px 15px 0 0;
+    padding-left: 25px;
+    font-weight: bold;
+    white-space: nowrap;
+    background-size: 20px !important;
+    background-position: left 4px !important;
+}
+
+.propertyhive .details .rooms .room-bedrooms {
+    background: url(https://elevation-mk.website-build.info/wp-content/uploads/2023/08/double-bed-icon.svg) no-repeat;
+}
+
+.propertyhive .details .rooms .room-bathrooms {
+    background: url(https://elevation-mk.website-build.info/wp-content/uploads/2023/08/bathtub-icon.svg) no-repeat;
+}
+
+.propertyhive .details .rooms .room-receptions {
+    background: url(https://elevation-mk.website-build.info/wp-content/uploads/2022/10/icon-reception-sm.png) no-repeat;
+}
+
+.room.room-photos {
+    background: url(https://elevation-mk.website-build.info/wp-content/uploads/2023/08/photos-icon.svg) no-repeat;
+}
+
+.room.room-photos.room-floorplans {
+    background: url(https://elevation-mk.website-build.info/wp-content/uploads/2023/08/floor-plan.svg) no-repeat;
+}
+
+.propertyhive ul.properties {
+    margin-bottom: 0;
+}
+
+.propertyhive ul.properties li a.button:after {
+    content: "";
+    background: url(https://elevation-mk.website-build.info/wp-content/uploads/2023/02/compass-icon.png) no-repeat center center;
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-left: 5px;
+    position: relative;
+    top: 3px;
+}
+
+.thumbnail .flag {
+    font-size: 16px !important;
+    background-color: var(--global-palette5) !important;
+    color: var(--global-palette9) !important;
+    font-weight: bold;
+    border: 3px solid var(--global-palette5);
+    top: 8px !important;
+    left: 0px !important;
+    border-radius: 10px;
+    padding: 0px 15px !important;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.cw-price-loc .price span.price-qualifier {
+    display: block;
+    font-size: 14px;
+    line-height: 14px;
+}
+
+@media screen and (max-width:1260px) and (min-width:990px) {
+    .propertyhive ul.properties li {
+        width: 32%;
+    }
+
+    .propertyhive ul.properties li:nth-child(4n+1) {
+        clear: none !important;
+        margin-left: 2% !important;
+    }
+
+    .propertyhive ul.properties li:nth-child(3n+1) {
+        clear: left !important;
+        margin-left: 0 !important;
+    }
+}
+
+.propertyhive .details .rooms .room-receptions {
+    display: none;
+}
+
+.photos-count-container {
+    display: flex;
+    align-items: center;
+}
+
+.propertyhive-properties-shortcode.propertyhive {
+    position: relative;
+}
+
+.propertyhive-properties-shortcode.propertyhive ul.properties li .thumbnail {
+    float: none;
+    width: 100%;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties li {
+    flex-grow: 1;
+    width: calc((100% - 40px) / 4);
+    max-width: calc((100% - 40px) / 4);
+}
+/* .propertyhive-properties-shortcode.propertyhive .thumbnail {
+    height: 40%;
+    max-height: 40%;
+    overflow: hidden;
+} */
+
+.propertyhive-properties-shortcode.propertyhive .thumbnail a {
+    display: block;
+    height: 100%;
+}
+.propertyhive-properties-shortcode.propertyhive .propertyhive ul.properties li a.button {
+    color: var(--global-palette-highlight);
+    border-color: 3px solid var(--global-palette5) !important;
+    margin-bottom: 20px;
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties li {
+    margin: 0 !important;
+}
+.propertyhive-properties-shortcode.propertyhive .details .rooms {
+    flex-wrap: nowrap;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties li .details {
+    float: none;
+    width: 100%;
+}
+.propertyhive-properties-shortcode.propertyhive .room.room-photos {
+    display: none;
+}
+.propertyhive-properties-shortcode.propertyhive ul.properties li a.button {
+    margin: 0 auto;
+}
+.propertyhive-properties-shortcode.propertyhive .cw-price-loc {
+    min-height: 64px;
+}
+.propertyhive-properties-shortcode.propertyhive .cw-detail-headings {
+    min-height: 58px;
+}
+@media (max-width: 1024px) {
+    .propertyhive-properties-shortcode.propertyhive ul.properties li {
+        width: calc((100% - 20px) / 2);
+        max-width: calc((100% - 20px) / 2);;
+    }
+}
+@media (min-width: 1023px) {
+    .propertyhive-properties-shortcode.propertyhive ul.properties li {
+        width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width:768px) {
+    .propertyhive-properties-shortcode.propertyhive.columns-3 ul.properties li {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+.propertyhive-properties-shortcode.propertyhive.columns-4 ul.properties li {
+    flex-grow: 1;
+    width: calc((100% / 4) - 16px);
+    max-width: calc((100% / 4) - 16px);
+}
+
+/* Tablet: 768px to 426px (2 columns) */
+@media (max-width: 768px) {
+    .propertyhive-properties-shortcode.propertyhive.columns-4 ul.properties li {
+        width: calc((100% / 2) - 16px) !important;
+        max-width: calc((100% / 2) - 16px) !important;
+    }
+}
+
+/* Mobile: 425px and smaller (1 column) */
+@media (max-width: 425px) {
+    .propertyhive-properties-shortcode.propertyhive.columns-4 ul.properties li {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}

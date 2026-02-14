@@ -1,0 +1,16 @@
+{
+    "name": "acf/team-grid",
+    "title": "CW Team Grid",
+    "description": "A custom block that displays a selectable grid of Team Members.",
+    "style": [ "file:./team_grid.css" ],
+    "category": "conversationware-blocks",
+    "icon": "grid-view",
+    "keywords": ["team", "grid", "cw"],
+    "acf": {
+        "mode": "preview",
+        "renderTemplate": "team_grid.php"
+    },
+    "supports": {
+        "anchor": true
+    }
+}
