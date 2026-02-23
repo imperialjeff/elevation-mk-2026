@@ -462,6 +462,35 @@ function set_furnished_status($post_id, $property) {
 }
 
 /* ======================================== */
+/* Street CRM - Store EPC ratings on import
+ * Street JSON has a top-level "epc" key with numeric efficiency scores.
+ * The Street import plugin doesn't extract these into _epc_eec/_epc_eep,
+ * so we do it here. Stores numeric scores (e.g. "84") not the letter grade.
+/* ======================================== */
+add_action('propertyhive_property_imported_street_json', 'set_epc_ratings', 10, 2);
+function set_epc_ratings($post_id, $property) {
+    if (!$post_id || !is_array($property)) return;
+    if (!isset($property['epc']) || !is_array($property['epc'])) {
+        delete_post_meta($post_id, '_epc_eec');
+        delete_post_meta($post_id, '_epc_eep');
+        return;
+    }
+    $epc = $property['epc'];
+    $current   = isset($epc['energy_efficiency_current'])   ? (int)$epc['energy_efficiency_current']   : '';
+    $potential = isset($epc['energy_efficiency_potential']) ? (int)$epc['energy_efficiency_potential'] : '';
+    if (!empty($current)) {
+        update_post_meta($post_id, '_epc_eec', $current);
+    } else {
+        delete_post_meta($post_id, '_epc_eec');
+    }
+    if (!empty($potential)) {
+        update_post_meta($post_id, '_epc_eep', $potential);
+    } else {
+        delete_post_meta($post_id, '_epc_eep');
+    }
+}
+
+/* ======================================== */
 /* Street CRM - Decode import data JSON
  * Street's API sometimes emits unescaped double quotes inside string values
  * (e.g. imperial dimensions like 16' 8" x 11' 10"). This helper sanitizes
