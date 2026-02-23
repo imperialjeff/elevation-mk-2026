@@ -134,7 +134,7 @@ function tile_gallery_shortcode() {
     if ( (!isset($images) || !is_array($images) || empty($images) || count($images) < 5) ) {
         $import_data = get_post_meta( get_the_ID(), '_property_import_data', true );
         if ( !empty($import_data) ) {
-            $import_json = json_decode($import_data, true);
+            $import_json = ph_decode_street_import_data($import_data);
             $import_images = isset($import_json['images']) ? $import_json['images'] : array();
 
             if ( is_array($import_images) && count($import_images) >= 5 ) {
@@ -459,6 +459,30 @@ function set_furnished_status($post_id, $property) {
     } else {
         wp_delete_object_term_relationships($post_id, 'furnished');
     }
+}
+
+/* ======================================== */
+/* Street CRM - Decode import data JSON
+ * Street's API sometimes emits unescaped double quotes inside string values
+ * (e.g. imperial dimensions like 16' 8" x 11' 10"). This helper sanitizes
+ * those before decoding so json_decode doesn't fail.
+/* ======================================== */
+function ph_decode_street_import_data( $raw ) {
+    if ( empty( $raw ) ) return null;
+    $json = json_decode( $raw, true );
+    if ( is_array( $json ) ) return $json;
+    // Street API bug: unescaped " inside string values (imperial dimensions)
+    // Replace bare " that appear inside a JSON string (not preceded by \ or : or , or { or [ or whitespace)
+    $sanitized = preg_replace_callback(
+        '/"((?:[^"\\\\]|\\\\.)*)"/s',
+        function( $m ) {
+            // Re-escape any unescaped double quotes inside the captured string value
+            $inner = preg_replace( '/(?<!\\\\)"/', '\\"', $m[1] );
+            return '"' . $inner . '"';
+        },
+        $raw
+    );
+    return json_decode( $sanitized, true );
 }
 
 /* ======================================== */

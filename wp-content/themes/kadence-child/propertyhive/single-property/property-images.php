@@ -17,11 +17,11 @@ global $post, $propertyhive, $property;
 
     <?php
     // Fallback: Check import data if no WordPress images found
-    // Updated for Street CRM migration (Feb 2026) - Street produces valid JSON
+    // Updated for Street CRM migration (Feb 2026) - use ph_decode_street_import_data() to handle unescaped quotes in imperial dimensions
     if ( !isset($images) || !is_array($images) || empty($images) || count($images) < 5 ) {
         $import_data = get_post_meta( get_the_ID(), '_property_import_data', true );
         if ( !empty($import_data) ) {
-            $import_json = json_decode($import_data, true);
+            $import_json = ph_decode_street_import_data($import_data);
 
             if ( isset($import_json['images']) && is_array($import_json['images']) && count($import_json['images']) >= 5 ) {
                 $images = array();
