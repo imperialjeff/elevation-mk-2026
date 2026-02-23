@@ -1,5 +1,6 @@
 # === Project-specific ===
 .webapp-config/
+.claude/
 
 # === WordPress configuration (contains credentials) ===
 wp-config.php
