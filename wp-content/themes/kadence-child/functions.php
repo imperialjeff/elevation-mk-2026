@@ -462,6 +462,13 @@ function set_furnished_status($post_id, $property) {
 }
 
 /* ======================================== */
+/* Replace default PropertyHive placeholder with branded image
+/* ======================================== */
+add_filter('propertyhive_placeholder_img_src', function() {
+    return get_site_url() . '/wp-content/uploads/2024/04/MKHomeBanner.jpg';
+});
+
+/* ======================================== */
 /* Street CRM - Store EPC ratings on import
  * Street JSON has a top-level "epc" key with numeric efficiency scores.
  * The Street import plugin doesn't extract these into _epc_eec/_epc_eep,
