@@ -465,7 +465,7 @@ function set_furnished_status($post_id, $property) {
 /* Replace default PropertyHive placeholder with branded image
 /* ======================================== */
 add_filter('propertyhive_placeholder_img_src', function() {
-    return get_site_url() . '/wp-content/uploads/2024/04/MKHomeBanner.jpg';
+    return get_site_url() . '/wp-content/uploads/2026/02/mk-placeholder.png';
 });
 
 /* ======================================== */
