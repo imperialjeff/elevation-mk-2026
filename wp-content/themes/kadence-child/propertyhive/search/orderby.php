@@ -32,21 +32,19 @@ global $propertyhive;
 				)
 				{
 					$results_orderby = apply_filters( 'propertyhive_results_orderby', array(
-						'price-desc' => __( 'Default sorting', 'propertyhive' ),
 						'date'       => __( 'Sort by date added', 'propertyhive' ),
-						'price-asc'      => __( 'Sort by price: low to high', 'propertyhive' ),
+						'price-asc'  => __( 'Sort by price: low to high', 'propertyhive' ),
 						'price-desc' => __( 'Sort by price: high to low', 'propertyhive' ),
 					) );
 				}
 				else
 				{
 					$results_orderby = apply_filters( 'propertyhive_results_orderby', array(
-						'floor_area-desc' => __( 'Default sorting', 'propertyhive' ),
-						'date'       => __( 'Sort by date added', 'propertyhive' ),
-						'floor_area-asc'      => __( 'Sort by floor area: low to high', 'propertyhive' ),
+						'date'            => __( 'Sort by date added', 'propertyhive' ),
+						'floor_area-asc'  => __( 'Sort by floor area: low to high', 'propertyhive' ),
 						'floor_area-desc' => __( 'Sort by floor area: high to low', 'propertyhive' ),
-						'price-asc'      => __( 'Sort by price: low to high', 'propertyhive' ),
-						'price-desc' => __( 'Sort by price: high to low', 'propertyhive' ),
+						'price-asc'       => __( 'Sort by price: low to high', 'propertyhive' ),
+						'price-desc'      => __( 'Sort by price: high to low', 'propertyhive' ),
 					) );
 				}
 
@@ -63,17 +61,17 @@ global $propertyhive;
 			</select>
 			<?php
 				}
-				
+
 				// Keep query string vars intact
 				foreach ( $_GET as $key => $val ) {
 					if ( 'orderby' === $key || 'submit' === $key )
 						continue;
-					
+
 					if ( is_array( $val ) ) {
 						foreach( $val as $innerVal ) {
 							echo '<input type="hidden" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $innerVal ) . '" />';
 						}
-					
+
 					} else {
 						echo '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $val ) . '" />';
 					}
