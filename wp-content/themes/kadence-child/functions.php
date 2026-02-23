@@ -462,6 +462,25 @@ function set_furnished_status($post_id, $property) {
 }
 
 /* ======================================== */
+/* Street CRM - Limit import to MK site branches only
+ * Filters out Bedford and Cambridge properties before import.
+ * Allowed branches: Milton Keynes, Elevation Lettings, Elevation New Homes
+/* ======================================== */
+add_filter('propertyhive_street_json_properties_due_import', 'filter_allowed_branch_properties', 10, 2);
+function filter_allowed_branch_properties($properties, $import_id) {
+    $allowed_branch_uuids = array(
+        'f0c77998-800c-4298-91e0-777fd513544a', // Milton Keynes
+        'fc211d8f-3165-4f84-919f-a30a442a1fa3', // Elevation Lettings
+        'ce5067fc-b54a-4bc2-8ca7-b1ca0c3627be', // Elevation New Homes
+    );
+    return array_filter($properties, function($property) use ($allowed_branch_uuids) {
+        return isset($property['attributes']['branch_uuid'])
+            && in_array($property['attributes']['branch_uuid'], $allowed_branch_uuids);
+    });
+}
+
+
+/* ======================================== */
 /* Available Plots Shortcode (ACF)
 /* This is a shortcode that takes intended
 /* for use as a highlight section in Devts
