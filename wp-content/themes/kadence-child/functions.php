@@ -462,6 +462,57 @@ function set_furnished_status($post_id, $property) {
 }
 
 /* ======================================== */
+/* Street CRM - Fetch and store development association on import
+ * Calls the Street API with ?include=development for each property
+ * and stores the development UUID and name as post meta.
+/* ======================================== */
+add_action('propertyhive_property_imported_street_json', 'fetch_and_store_development_data', 20, 3);
+function fetch_and_store_development_data($post_id, $property, $import_id) {
+    if (!$post_id || !is_array($property)) return;
+
+    $dev_id = isset($property['relationships']['development']['data']['id'])
+        ? $property['relationships']['development']['data']['id']
+        : '';
+
+    if (empty($dev_id)) {
+        delete_post_meta($post_id, '_street_development_id');
+        delete_post_meta($post_id, '_street_development_name');
+        return;
+    }
+
+    $self_url = isset($property['relationships']['development']['links']['self'])
+        ? $property['relationships']['development']['links']['self']
+        : '';
+    if (empty($self_url)) return;
+
+    $import_settings = propertyhive_property_import_get_import_settings_from_id($import_id);
+    if (empty($import_settings['api_key'])) return;
+
+    $response = wp_remote_get($self_url, array(
+        'headers' => array('Authorization' => 'Bearer ' . $import_settings['api_key']),
+        'timeout' => 15,
+    ));
+    if (is_wp_error($response)) return;
+
+    $data = json_decode(wp_remote_retrieve_body($response), true);
+    if (!is_array($data) || empty($data['included'])) {
+        update_post_meta($post_id, '_street_development_id', sanitize_text_field($dev_id));
+        return;
+    }
+
+    $dev_name = '';
+    foreach ($data['included'] as $included) {
+        if (isset($included['type']) && $included['type'] === 'development' && $included['id'] === $dev_id) {
+            $dev_name = isset($included['attributes']['name']) ? $included['attributes']['name'] : '';
+            break;
+        }
+    }
+
+    update_post_meta($post_id, '_street_development_id', sanitize_text_field($dev_id));
+    update_post_meta($post_id, '_street_development_name', sanitize_text_field($dev_name));
+}
+
+/* ======================================== */
 /* Replace default PropertyHive placeholder with branded image
 /* ======================================== */
 add_filter('propertyhive_placeholder_img_src', function() {
@@ -555,8 +606,8 @@ function available_plots_shortcode() {
         'meta_query' => array(
             'relation' => 'AND',
             array(
-                'key' => 'property_devt_tag', 
-                'value' => get_field('development_property_tag'), 
+                'key' => '_street_development_id',
+                'value' => get_field('street_development_id'),
                 'compare' => '='
             ),
             array(
@@ -651,8 +702,8 @@ function sold_plots_shortcode() {
         'meta_query' => array(
             'relation' => 'AND',
             array(
-                'key' => 'property_devt_tag', 
-                'value' => get_field('development_property_tag'), 
+                'key' => '_street_development_id',
+                'value' => get_field('street_development_id'),
                 'compare' => '='
             ),
             array(
