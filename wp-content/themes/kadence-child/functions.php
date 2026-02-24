@@ -463,15 +463,58 @@ function set_furnished_status($post_id, $property) {
 
 /* ======================================== */
 /* Street CRM - Fetch and store development association on import
- * Calls the Street API with ?include=development for each property
- * and stores the development UUID and name as post meta.
+ * The $property array is fetched without ?include=development so
+ * relationships.development.data is absent. Instead we use the
+ * links.self URL (which already includes ?include=development) to
+ * make a fresh API call and extract the development UUID and name.
 /* ======================================== */
 add_action('propertyhive_property_imported_street_json', 'fetch_and_store_development_data', 20, 3);
 function fetch_and_store_development_data($post_id, $property, $import_id) {
     if (!$post_id || !is_array($property)) return;
 
-    $dev_id = isset($property['relationships']['development']['data']['id'])
-        ? $property['relationships']['development']['data']['id']
+    // links.self already contains ?include=development
+    $self_url = isset($property['relationships']['development']['links']['self'])
+        ? $property['relationships']['development']['links']['self']
+        : '';
+
+    if (empty($self_url)) {
+        delete_post_meta($post_id, '_street_development_id');
+        delete_post_meta($post_id, '_street_development_name');
+        return;
+    }
+
+    $import_settings = propertyhive_property_import_get_import_settings_from_id($import_id);
+    if (empty($import_settings['api_key'])) return;
+
+    // Fetch with retry — handles transient failures and HTTP 429 rate limiting
+    $data = null;
+    for ($attempt = 1; $attempt <= 3; $attempt++) {
+        $response = wp_remote_get($self_url, array(
+            'headers' => array('Authorization' => 'Bearer ' . $import_settings['api_key']),
+            'timeout' => 15,
+        ));
+        if (is_wp_error($response)) {
+            sleep(2 * $attempt);
+            continue;
+        }
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code === 429) {
+            $retry_after = wp_remote_retrieve_header($response, 'retry-after');
+            sleep($retry_after ? (int) $retry_after : (10 * $attempt));
+            continue;
+        }
+        if ($code === 200) {
+            $data = ph_decode_street_import_data(wp_remote_retrieve_body($response));
+            break;
+        }
+        break;
+    }
+
+    if (!is_array($data)) return;
+
+    // dev_id comes from the live API response, not the stale $property array
+    $dev_id = isset($data['data']['relationships']['development']['data']['id'])
+        ? $data['data']['relationships']['development']['data']['id']
         : '';
 
     if (empty($dev_id)) {
@@ -480,31 +523,13 @@ function fetch_and_store_development_data($post_id, $property, $import_id) {
         return;
     }
 
-    $self_url = isset($property['relationships']['development']['links']['self'])
-        ? $property['relationships']['development']['links']['self']
-        : '';
-    if (empty($self_url)) return;
-
-    $import_settings = propertyhive_property_import_get_import_settings_from_id($import_id);
-    if (empty($import_settings['api_key'])) return;
-
-    $response = wp_remote_get($self_url, array(
-        'headers' => array('Authorization' => 'Bearer ' . $import_settings['api_key']),
-        'timeout' => 15,
-    ));
-    if (is_wp_error($response)) return;
-
-    $data = json_decode(wp_remote_retrieve_body($response), true);
-    if (!is_array($data) || empty($data['included'])) {
-        update_post_meta($post_id, '_street_development_id', sanitize_text_field($dev_id));
-        return;
-    }
-
     $dev_name = '';
-    foreach ($data['included'] as $included) {
-        if (isset($included['type']) && $included['type'] === 'development' && $included['id'] === $dev_id) {
-            $dev_name = isset($included['attributes']['name']) ? $included['attributes']['name'] : '';
-            break;
+    if (!empty($data['included'])) {
+        foreach ($data['included'] as $included) {
+            if (isset($included['type']) && $included['type'] === 'development' && $included['id'] === $dev_id) {
+                $dev_name = isset($included['attributes']['name']) ? $included['attributes']['name'] : '';
+                break;
+            }
         }
     }
 
@@ -621,20 +646,49 @@ function available_plots_shortcode() {
     $plots_q = new WP_Query($args);
     // The Loop
     if ($plots_q->have_posts()) {
-        $return.= '<div class="available-plots-container">';
+        $return .= '<div class="available-plots-container">';
         while ($plots_q->have_posts()) {
             $plots_q->the_post();
-            global $post, $property;
-            $return.= '<a class="available-plot" href="' . get_the_permalink() . '" target="_blank">';
-            $return.= '<div class="available-plot-image" style="background-image:url(' . $property->get_main_photo_src('large') . ')"></div>';
-            $return.= '<div class="available-plot-details">';
+            global $post;
+            ph_setup_property_data( $post );
+            global $property;
+            $pid = get_the_ID();
 
-            $ph_street_num = get_post_meta( get_the_ID(), '_address_name_number', true );
+            $name_number    = get_post_meta($pid, '_address_name_number', true);
+            $address_street = get_post_meta($pid, '_address_street', true);
+            $postcode       = get_post_meta($pid, '_address_postcode', true);
+            $raw_import     = get_post_meta($pid, '_property_import_data', true);
+            $import_json    = ph_decode_street_import_data($raw_import);
 
-            $return.= '<h4>' . esc_html($ph_street_num) . '</h4>';
-            $return.= '</div></a>';
+            // Option A: extract labelled unit from public_address (e.g. "Plot 20, Russell Road...")
+            $title = '';
+            $public_address = isset($import_json['attributes']['public_address']) ? $import_json['attributes']['public_address'] : '';
+            if ($public_address && preg_match('/^((?:plot|flat|apartment|unit|room)\s+\d+\S*)/i', $public_address, $m)) {
+                $title = $m[1];
+            }
+
+            // Option B fallbacks: bare numeric name_number, labelled prefix in _address_street, or full street+postcode
+            if (empty($title)) {
+                if ($name_number && !ctype_digit(trim($name_number))) {
+                    // name_number contains letters (e.g. "Flat 9") — use it directly
+                    $title = $name_number;
+                } elseif ($address_street && preg_match('/^((?:plot|flat|apartment|unit|room)\s+\S+)/i', $address_street, $m)) {
+                    $title = $m[1];
+                } else {
+                    $title = trim($address_street . ($postcode ? ', ' . $postcode : ''));
+                }
+            }
+
+            // Strip any trailing punctuation left by regex captures (e.g. "Plot 20," or "Flat 9-")
+            $title = rtrim($title, ',-.:;/\\\'"|');
+
+            $return .= '<a class="available-plot" href="' . get_the_permalink() . '" target="_blank">';
+            $return .= '<div class="available-plot-image" style="background-image:url(' . $property->get_main_photo_src('large') . ')"></div>';
+            $return .= '<div class="available-plot-details">';
+            $return .= '<h4>' . esc_html($title) . '</h4>';
+            $return .= '</div></a>';
         }
-        $return.= '</div>';
+        $return .= '</div>';
     } else {
         // no posts found - add body class if on developments post type
         // if (get_post_type() === 'developments') {
@@ -717,20 +771,49 @@ function sold_plots_shortcode() {
     $plots_q = new WP_Query($args);
     // The Loop
     if ($plots_q->have_posts()) {
-        $return.= '<div class="available-plots-container sold-plots">';
+        $return .= '<div class="available-plots-container sold-plots">';
         while ($plots_q->have_posts()) {
             $plots_q->the_post();
-            global $post, $property;
-            $return.= '<div class="available-plot sold-plot-' . get_the_ID() . '">';
-            $return.= '<div class="available-plot-image" style="background-image:url(' . $property->get_main_photo_src('large') . ')"><div class="flag flag-sold">Sold</div></div>';
-            $return.= '<div class="available-plot-details">';
+            global $post;
+            ph_setup_property_data( $post );
+            global $property;
+            $pid = get_the_ID();
 
-            $ph_street_num = get_post_meta( get_the_ID(), '_address_name_number', true );
+            $name_number    = get_post_meta($pid, '_address_name_number', true);
+            $address_street = get_post_meta($pid, '_address_street', true);
+            $postcode       = get_post_meta($pid, '_address_postcode', true);
+            $raw_import     = get_post_meta($pid, '_property_import_data', true);
+            $import_json    = ph_decode_street_import_data($raw_import);
 
-            $return.= '<h4>' . esc_html($ph_street_num) . '</h4>';
-            $return.= '</div></div>';
+            // Option A: extract labelled unit from public_address (e.g. "Plot 20, Russell Road...")
+            $title = '';
+            $public_address = isset($import_json['attributes']['public_address']) ? $import_json['attributes']['public_address'] : '';
+            if ($public_address && preg_match('/^((?:plot|flat|apartment|unit|room)\s+\d+\S*)/i', $public_address, $m)) {
+                $title = $m[1];
+            }
+
+            // Option B fallbacks: bare numeric name_number, labelled prefix in _address_street, or full street+postcode
+            if (empty($title)) {
+                if ($name_number && !ctype_digit(trim($name_number))) {
+                    // name_number contains letters (e.g. "Flat 9") — use it directly
+                    $title = $name_number;
+                } elseif ($address_street && preg_match('/^((?:plot|flat|apartment|unit|room)\s+\S+)/i', $address_street, $m)) {
+                    $title = $m[1];
+                } else {
+                    $title = trim($address_street . ($postcode ? ', ' . $postcode : ''));
+                }
+            }
+
+            // Strip any trailing punctuation left by regex captures (e.g. "Plot 20," or "Flat 9-")
+            $title = rtrim($title, ',-.:;/\\\'"|');
+
+            $return .= '<div class="available-plot sold-plot-' . $pid . '">';
+            $return .= '<div class="available-plot-image" style="background-image:url(' . $property->get_main_photo_src('large') . ')"><div class="flag flag-sold">Sold</div></div>';
+            $return .= '<div class="available-plot-details">';
+            $return .= '<h4>' . esc_html($title) . '</h4>';
+            $return .= '</div></div>';
         }
-        $return.= '</div>';
+        $return .= '</div>';
     } else {
         // no posts found - add body class if on developments post type
         // if (get_post_type() === 'developments') {
